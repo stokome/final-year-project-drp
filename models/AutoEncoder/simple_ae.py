@@ -1,4 +1,3 @@
-import os
 import torch.nn as nn
 
 class Simple_Auto_Encoder(nn.Module):

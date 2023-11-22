@@ -1,6 +1,7 @@
 import csv
 import os
 import random
+import argparse
 import numpy as np
 from torch import nn as nn
 import torch
@@ -10,6 +11,7 @@ import torch.utils.data as Data
 import datetime
 from models.AutoEncoder.simple_ae import Simple_Auto_Encoder
 from models.AutoEncoder.deep_ae import Deep_Auto_Encoder
+from models.AutoEncoder.variational_ae import Variational_Auto_Encoder
 
 # cell
 ge_folder = "./data/"
@@ -18,30 +20,46 @@ model_save_path = "./saved/auto_encoder.pt"
 device="cuda"
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
-def train_ae(model,trainLoader,test_feature):
+def loss_function(x, x_hat, mean, log_var):
+    reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
+    KLD = - 0.5 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
+    return reproduction_loss + KLD
+
+def train_ae(model,trainLoader,test_feature, model_type):
     start = datetime.datetime.now()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    loss_func = nn.MSELoss()
+    if model_type == 2:
+        loss_func = loss_function
+    elif model_type == 0 or model_type == 1:
+        loss_func = nn.MSELoss()
     best_model=model
     best_loss=100
     for epoch in range(1, 2500 + 1 ):
         for x in trainLoader:
             y=x
-            encoded, decoded = model(x)
-            train_loss = loss_func(decoded, y)
+            if model_type == 0 or model_type == 1:
+                encoded, decoded = model(x)
+                train_loss = loss_func(decoded, y).item()
+            elif model_type == 2:
+                x_hat, mean, logvar = model(x)
+                train_loss = loss_func(y, x_hat, mean, logvar)
             optimizer.zero_grad()
             train_loss.backward()
             optimizer.step()
         with torch.no_grad():
             y = test_feature
-            encoded, decoded = model(test_feature)
-            test_loss = loss_func(decoded, y)
-        if (test_loss.item() < best_loss):
+            if model_type == 0 or model_type == 1:
+                encoded, decoded = model(test_feature)
+                test_loss = loss_func(decoded, y).item()
+            elif model_type == 2:
+                x_hat, mean, logvar = model(test_feature)
+                test_loss = loss_func(y, x_hat, mean, logvar)
+        if (test_loss < best_loss):
             best_loss = test_loss
             best_model = model
         if epoch%10==0:
             end = datetime.datetime.now()
-            print('epoch:' ,epoch, 'train loss = ' ,train_loss.item(),"test loss:",test_loss.item(), "time:",(end - start).seconds)
+            print('epoch:' ,epoch, 'train loss = ' ,train_loss,"test loss:",test_loss, "time:",(end - start).seconds)
     return best_model
 
 def save_cell_oge_matrix(folder):
@@ -105,29 +123,35 @@ def save_cell_oge_matrix(folder):
 
 lr=0.0001
 batch_size=388
-def main():
+def main(model_type):
     random.seed(4)
     # load  gene expression data, and DNA copy number data of cell line
     cell_dict, cell_features = save_cell_oge_matrix(ge_folder)
-
-
     #normalization
     min_max = MinMaxScaler()
     cell_features = torch.tensor(min_max.fit_transform(cell_features)).float().to(device)
     ge_indim = cell_features.shape[-1]
     print(f"Cell Features: {cell_features.shape[0]}")
-
     # dimension reduction(gene expression data)
-    ge_ae = Simple_Auto_Encoder(device, ge_indim, 512)
+    if model_type == 0:
+        ge_ae = Simple_Auto_Encoder(device, ge_indim, 512)
+    elif model_type == 1:
+        ge_ae = Deep_Auto_Encoder(device, ge_indim, 512)
+    elif model_type == 2:
+        ge_ae = Variational_Auto_Encoder(device, ge_indim, 512)
     train_list = random.sample((cell_features).tolist(), int(0.9 * len(cell_features)))
     test_list = [item for item in (cell_features).tolist() if item not in train_list]
-    train=torch.tensor(train_list).float().to(device)
+    train = torch.tensor(train_list).float().to(device)
     test = torch.tensor(test_list).float().to(device)
     data_iter = Data.DataLoader(train, batch_size, shuffle=True)
-    best_model=train_ae(ge_ae, data_iter, test)
+    best_model = train_ae(ge_ae, data_iter, test, model_type)
     os.makedirs("./saved")
     torch.save(best_model.output(cell_features), ge_ae_save)
     torch.save(best_model, model_save_path)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='train auto encoder')
+    parser.add_argument('--model', type=int, required=False, default=0,     help='0: simple autoencoder, 1: deep autoencoder, 2: variational_autoencoder')
+    args = parser.parse_args()
+    model = args.model
+    main(model_type)
