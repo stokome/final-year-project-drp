@@ -9,23 +9,23 @@ class Variational_Auto_Encoder(nn.Module):
         self.mean_layer = nn.Linear(1024, outdim)
         self.logvar_layer = nn.Linear(1024, outdim)
 
-        def reparameterization(self, mean, var):
-            epsilon = torch.randn_like(var).to(device)      
-            z = mean + var*epsilon
-            return z
+    def reparameterization(self, mean, var):
+        epsilon = torch.randn_like(var).to(device)      
+        z = mean + var*epsilon
+        return z
 
-        def forward(self, x):
-            x = self.encoder(x)
-            mean, logvar = self.mean_layer(x), self.logvar_layer(x)
-            z = self.reparameterization(mean, logvar)
-            x_hat = self.decoder(z)
-            return x_hat, mean, logvar
+    def forward(self, x):
+        x = self.encoder(x)
+        mean, logvar = self.mean_layer(x), self.logvar_layer(x)
+        z = self.reparameterization(mean, logvar)
+        x_hat = self.decoder(z)
+        return x_hat, mean, logvar
 
-        def output(self, x):
-            x = self.encoder(x)
-            mean, logvar = self.mean_layer(x), self.logvar_layer(x)
-            z = self.reparameterization(mean, logvar)
-            return z
+    def output(self, x):
+        x = self.encoder(x)
+        mean, logvar = self.mean_layer(x), self.logvar_layer(x)
+        z = self.reparameterization(mean, logvar)
+        return z
 
 class Encoder(nn.Module):
     def __init__(self,device, indim, outdim=512):
