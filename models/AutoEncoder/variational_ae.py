@@ -1,16 +1,18 @@
+import torch
 import torch.nn as nn
 
 class Variational_Auto_Encoder(nn.Module):
 
-    def __init__(self, device, indim, outdim=512)::
+    def __init__(self, device, indim, outdim=512):
         super(Variational_Auto_Encoder, self).__init__()
         self.encoder = Encoder(device=device,indim=indim,outdim=outdim)
         self.decoder = Decoder(device=device,outdim=indim,indim=outdim)
         self.mean_layer = nn.Linear(1024, outdim)
         self.logvar_layer = nn.Linear(1024, outdim)
+        self.device = device
 
     def reparameterization(self, mean, var):
-        epsilon = torch.randn_like(var).to(device)      
+        epsilon = torch.randn_like(var).to(self.device)      
         z = mean + var*epsilon
         return z
 

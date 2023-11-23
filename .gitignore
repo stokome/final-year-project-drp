@@ -133,3 +133,4 @@ dmypy.json
 data/
 # AutoEncoder saved files
 saved/
+global_data/

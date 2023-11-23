@@ -14,10 +14,10 @@ from models.AutoEncoder.deep_ae import Deep_Auto_Encoder
 from models.AutoEncoder.variational_ae import Variational_Auto_Encoder
 
 # cell
-ge_folder = "./data/"
+ge_folder = "./global_data/"
 ge_ae_save = "./saved/Cell_line_RMA_proc_basalExp.pt"
 model_save_path = "./saved/auto_encoder.pt"
-device="cuda"
+device="cpu"
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 def loss_function(x, x_hat, mean, log_var):
@@ -39,7 +39,7 @@ def train_ae(model,trainLoader,test_feature, model_type):
             y=x
             if model_type == 0 or model_type == 1:
                 encoded, decoded = model(x)
-                train_loss = loss_func(decoded, y).item()
+                train_loss = loss_func(decoded, y)
             elif model_type == 2:
                 x_hat, mean, logvar = model(x)
                 train_loss = loss_func(y, x_hat, mean, logvar)
@@ -50,7 +50,7 @@ def train_ae(model,trainLoader,test_feature, model_type):
             y = test_feature
             if model_type == 0 or model_type == 1:
                 encoded, decoded = model(test_feature)
-                test_loss = loss_func(decoded, y).item()
+                test_loss = loss_func(decoded, y)
             elif model_type == 2:
                 x_hat, mean, logvar = model(test_feature)
                 test_loss = loss_func(y, x_hat, mean, logvar)
@@ -59,7 +59,7 @@ def train_ae(model,trainLoader,test_feature, model_type):
             best_model = model
         if epoch%10==0:
             end = datetime.datetime.now()
-            print('epoch:' ,epoch, 'train loss = ' ,train_loss,"test loss:",test_loss, "time:",(end - start).seconds)
+            print('epoch:' ,epoch, 'train loss = ' ,train_loss.item(),"test loss:",test_loss.item(), "time:",(end - start).seconds)
     return best_model
 
 def save_cell_oge_matrix(folder):
@@ -145,7 +145,8 @@ def main(model_type):
     test = torch.tensor(test_list).float().to(device)
     data_iter = Data.DataLoader(train, batch_size, shuffle=True)
     best_model = train_ae(ge_ae, data_iter, test, model_type)
-    os.makedirs("./saved")
+    if not os.path.isdir("saved"):
+        os.makedirs("./saved")
     torch.save(best_model.output(cell_features), ge_ae_save)
     torch.save(best_model, model_save_path)
 
@@ -153,5 +154,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train auto encoder')
     parser.add_argument('--model', type=int, required=False, default=0,     help='0: simple autoencoder, 1: deep autoencoder, 2: variational_autoencoder')
     args = parser.parse_args()
-    model = args.model
+    model_type = args.model
     main(model_type)

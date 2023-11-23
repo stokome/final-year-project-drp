@@ -21,7 +21,16 @@
 
 # Step-by-step running:
 
-## 1. Create data in pytorch format
+## 1. Train a autoencoder model
+```sh
+python train_ae.py --model 0
+```
+choice:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0: Simple AutoEncoder
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1: Deep AutoEncoder 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: Variational Autoencoder
+
+## 2. Create data in pytorch format
 ```sh
 python preprocess.py --choice 0
 ```
@@ -32,7 +41,7 @@ choice:
 
 This returns file pytorch format (.pt) stored at data/processed including training, validation, test set.
 
-## 2. Train a GraTransDRP model
+## 3. Train a GraTransDRP model
 ```sh
 python training.py --model 0 --train_batch 1024 --val_batch 1024 --test_batch 1024 --lr 0.0001 --num_epoch 300 --log_interval 20 --cuda_name "cuda:0"
 ```
