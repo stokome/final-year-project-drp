@@ -39,7 +39,7 @@ def is_not_float(string_list):
 The following 4 function is used to preprocess the drug data. We download the drug list manually, and download the SMILES format using pubchempy. Since this part is time consuming, I write the cids and SMILES into a csv file. 
 """
 
-folder = "data/"
+folder = "globa_data/"
 #folder = ""
 
 def load_drug_list():
@@ -235,7 +235,7 @@ This part is used to read PANCANCER Meth Cell line features
 """
 
 def save_cell_meth_matrix():
-    f = open(folder + "METH_CELLLINES_BEMs_PANCAN.csv")
+    f = open(folder + "METH_CELLLINES_BEMs_PANCAN2.csv")
     reader = csv.reader(f)
     firstRow = next(reader)
     numberCol = len(firstRow) - 1

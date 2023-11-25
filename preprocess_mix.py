@@ -39,8 +39,8 @@ def is_not_float(string_list):
 The following 4 function is used to preprocess the drug data. We download the drug list manually, and download the SMILES format using pubchempy. Since this part is time consuming, I write the cids and SMILES into a csv file. 
 """
 
-folder = "data/"
-#folder = ""
+folder = "global_data/"
+device = "cuda"
 
 def load_drug_list():
     filename = folder + "Druglist.csv"
@@ -235,7 +235,7 @@ This part is used to read PANCANCER Meth Cell line features
 """
 
 def save_cell_meth_matrix():
-    f = open(folder + "METH_CELLLINES_BEMs_PANCAN.csv")
+    f = open(folder + "METH_CELLLINES_BEMs_PANCAN2.csv")
     reader = csv.reader(f)
     firstRow = next(reader)
     numberCol = len(firstRow) - 1
@@ -468,8 +468,8 @@ def save_mix_drug_cell_matrix(choice):
         cell_feature_ge = isomap.fit_transform(cell_feature_ge)
     elif choice == 3:
         #AutoEncoder
-        simple_autoencoder = torch.load("/content/saved/auto_encoder.pt")
-        cell_feature_ge = torch.tensor(cell_feature_ge).float().to("cuda")
+        simple_autoencoder = torch.load("./saved/auto_encoder.pt")
+        cell_feature_ge = torch.tensor(cell_feature_ge).float().to(device)
         cell_feature_ge = simple_autoencoder.output(cell_feature_ge)
         cell_feature_ge = cell_feature_ge.to("cpu").detach().numpy()
         print(f"Shape of gene expression after encoding: {cell_feature_ge.shape}")
@@ -539,7 +539,7 @@ def save_mix_drug_cell_matrix(choice):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='prepare dataset to train model')
-    parser.add_argument('--choice', type=int, required=False, default=0, help='0.KernelPCA, 1.PCA, 2.Isomap')
+    parser.add_argument('--choice', type=int, required=False, default=0, help='0.KernelPCA, 1.PCA, 2.Isomap, 3.AutoEncoder')
     args = parser.parse_args()
     choice = args.choice
     save_mix_drug_cell_matrix(choice)
